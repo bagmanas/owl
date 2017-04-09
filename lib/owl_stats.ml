@@ -734,6 +734,36 @@ let fisher_test x = None
 let lillie_test x = None
 (* Lilliefors test *)
 
+(*Tie correction factor for ties in the Mann-Whitney U and Kruskal-Wallis H tests*)
+let tiecorrect rankvals =
+  1.0
+
+(* Mann–Whitney U test *)
+let mannwhitneyu ?(alpha=0.05) ?(side=BothSide) x y =
+  let n1 = float_of_int (Array.length x) in
+  let n2 = float_of_int (Array.length y) in
+  let ranked = rank (Array.append x y) in
+  let rankx = Array.fold_left (+.) 0.0 (Array.sub ranked 0 (int_of_float n1)) in
+  let u1 = n1 *. n2 +. (n1 *. (n1 +. 1.0)) /. 2.0 -. rankx in
+  let u2 = n1 *. n2 -. u1 in
+  let t = tiecorrect ranked in
+  let sd = sqrt(t *. n1 *. n2 *. (n1 +. n2 +. 1.0) /. 12.0) in
+  let mean = n1 *. n2 /. 2.0 in
+  let bigu = match side with
+    | BothSide -> max u1 u2
+    | RightSide -> u2
+    | LeftSide -> u1
+  in
+  let z = (bigu -. mean) /. sd in
+  let p = match side with
+    | BothSide -> 2.0 *. Cdf.gaussian_Q (abs_float z) 1.0
+    | RightSide -> Cdf.gaussian_Q z 1.0
+    | LeftSide -> Cdf.gaussian_Q z 1.0
+  in
+  let h = alpha > p in
+  (h, p, u2)
+
+
 let runs_test ?(alpha=0.05) ?(side=BothSide) ?v x =
 (* Run test for randomness *)
 let v = match v with
@@ -801,7 +831,5 @@ let gibbs_sampling f p n =
     if (i >= a) && (i mod b = 0) then
       s.( (i - a) / b ) <- (Array.copy p)
   done; s
-
-
 
 (* ends here *)
