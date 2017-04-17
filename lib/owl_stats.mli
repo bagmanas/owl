@@ -195,6 +195,9 @@ val fisher_test : ?alpha:float -> ?side:tail -> int -> int -> int -> int -> bool
     [z] is prior odds ratio.
 *)
 
+val mannwhitneyu : ?alpha:float -> ?side:tail -> float array -> float array -> bool * float * float
+
+
 val runs_test : ?alpha:float -> ?side:tail -> ?v:float -> float array -> bool * float * float
 (** [runs_test ~alpha ~v x] returns a test decision for the null hypothesis that
   the data [x] comes in random order, against the alternative that they do not,
