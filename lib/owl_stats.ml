@@ -33,7 +33,7 @@ let choose x n =
 let sample x n =
   let y = Array.make n x.(0) in
   Gsl.Randist.sample rng x y; y
-  
+
 
 (** [ Statistics function ]  *)
 
@@ -735,8 +735,26 @@ let lillie_test x = None
 (* Lilliefors test *)
 
 (*Tie correction factor for ties in the Mann-Whitney U and Kruskal-Wallis H tests*)
+
+
+let count_dup' l =
+  match l with
+    | [] -> []
+    | hd::tl ->
+      let acc,x,c = List.fold_left (fun (acc,x,c) y -> if y = x then acc,x,c+1 else (x,c)::acc, y,1) ([],hd,1) tl in
+      (x,c)::acc
+
 let tiecorrect rankvals =
-  1.0
+  let ranks_sort = sort rankvals in
+  let counts = count_dup' (Array.to_list ranks_sort) in
+  let size = (float_of_int (Array.length rankvals)) in
+  let sss = Array.of_list (List.map (fun (x, y) -> y * y * y - y) counts) in
+  let s = Array.fold_left (+) 0 sss in
+  match size with
+  | 0.0 -> 1.0
+  | 1.0 -> 1.0
+  | _ -> 1.0 -. (float_of_int s)/.(size *. size *. size -. size)
+
 
 (* Mann–Whitney U test *)
 let mannwhitneyu ?(alpha=0.05) ?(side=BothSide) x y =
